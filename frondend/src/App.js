@@ -15,8 +15,12 @@ function App() {
   });
   const [pins, setPins] = useState([]);
   const [newPlace, setNewPlace] = useState(null);
-  const [currentUsername, setCurrentUsername] = useState("mohi");
+  const [currentUsername, setCurrentUsername] = useState(null);
   const [currentPlaceId, setCurrentPlaceId] = useState(null);
+  const [title, setTitle] = useState(null);
+  const [desc, setDesc] = useState(null);
+  const [star, setStar] = useState(0);
+
   const REACT_APP_MAPBOX_ACCESS_TOKEN = `pk.eyJ1IjoidmlwMjg1MjciLCJhIjoiY2t0MGZ0YXAzMDAyMjJvbnpob2p4YWdjMyJ9.sFXzc2nqnpaDI0O50YsBgA`;
   useEffect(() => {
     const getAllPin = async () => {
@@ -41,6 +45,24 @@ function App() {
       long: longitude,
     });
   };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const newPin = {
+      username: currentUsername,
+      title,
+      desc,
+      rating: star,
+      lat: newPlace.lat,
+      long: newPlace.long,
+    };
+    try {
+      const res = await axios.post("/pins", newPin);
+      setPins([...pins, res.data]);
+      setNewPlace(null);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <div className="App">
       <ReactMapGL
@@ -49,14 +71,15 @@ function App() {
         onViewportChange={(nextViewport) => setViewport(nextViewport)}
         mapStyle="mapbox://styles/safak/cknndpyfq268f17p53nmpwira"
         onDblClick={handleAddPlace}
+        transitionDuration="200"
       >
         {pins.map((p) => (
           <>
             <Marker
               latitude={p.lat}
               longitude={p.long}
-              offsetLeft={-20}
-              offsetTop={-10}
+              offsetLeft={-3.5 * viewport.zoom}
+              offsetTop={-7 * viewport.zoom}
             >
               <Room
                 style={{
@@ -84,11 +107,7 @@ function App() {
                   <p>{p.desc}</p>
                   <label>Rating</label>
                   <div className="stars">
-                    <Star />
-                    <Star />
-                    <Star />
-                    <Star />
-                    <Star />
+                    {Array(p.rating).fill(<Star className="star" />)}
                   </div>
                   <label className="username">Information</label>
                   <span className="username">
@@ -109,8 +128,41 @@ function App() {
             anchor="top"
             onClose={() => setNewPlace(null)}
           >
-            <p>hello</p>
+            <div>
+              <form onSubmit={handleSubmit}>
+                <label>Title</label>
+                <input
+                  placeholder="Enter a title"
+                  autoFocus
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+                <label>Description</label>
+                <textarea
+                  placeholder="Say us something about this place."
+                  onChange={(e) => setDesc(e.target.value)}
+                />
+                <label>Rating</label>
+                <select onChange={(e) => setStar(e.target.value)}>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+                <button type="submit" className="submitButton">
+                  Add Pin
+                </button>
+              </form>
+            </div>
           </Popup>
+        )}
+        {currentUsername ? (
+          <button className="button logout">Log out</button>
+        ) : (
+          <div className="buttons">
+            <button className="button login">Log in</button>
+            <button className="button register">Register</button>
+          </div>
         )}
       </ReactMapGL>
     </div>
